@@ -61,7 +61,7 @@ class GuiApp(wx.App):
             # throttle this back a bit somehow so there is not too
             # much CPU time spent in the idle handlers.  For this
             # example, I'll just snooze a little...
-            gevent.sleep()
+            gevent.sleep(0.1)
             self.ProcessIdle()
         wx.EventLoop.SetActive(old)
 
@@ -78,12 +78,12 @@ class GuiApp(wx.App):
         self.frame.m_status_clients.SetLabel(str(total))
 
     def set_stats(self, stats):
-        self.frame.m_stats_player_cs.SetLabel(stats.get('CS', '?'))
-        self.frame.m_stats_player_kills.SetLabel(stats.get('kills', '?'))
-        self.frame.m_stats_player_deaths.SetLabel(stats.get('deaths', '?'))
-        self.frame.m_stats_player_assists.SetLabel(stats.get('assists', '?'))
-        self.frame.m_stats_team_kills.SetLabel(stats.get('team_kills', '?'))
-        self.frame.m_stats_team_deaths.SetLabel(stats.get('team_deaths', '?'))
+        self.frame.m_stats_player_cs.SetLabel(str(stats.get('CS', '?')))
+        self.frame.m_stats_player_kills.SetLabel(str(stats.get('kills', '?')))
+        self.frame.m_stats_player_deaths.SetLabel(str(stats.get('deaths', '?')))
+        self.frame.m_stats_player_assists.SetLabel(str(stats.get('assists', '?')))
+        self.frame.m_stats_team_kills.SetLabel(str(stats.get('team_kills', '?')))
+        self.frame.m_stats_team_deaths.SetLabel(str(stats.get('team_deaths', '?')))
 
 class Gui():
     def __init__(self, death_event, **kwargs):

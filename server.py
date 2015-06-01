@@ -101,6 +101,7 @@ class EchoWebSocketApplication(object):
               };
               ws.onmessage = function (evt) {
                  $('#chat').val($('#chat').val() + evt.data + '\\n');
+                 $('#chat')[0].scrollTop = 999999999;
               };
               ws.onopen = function() {
                  ws.send("%(username)s entered the room");

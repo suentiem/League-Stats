@@ -10,6 +10,10 @@
 import wx
 import wx.xrc
 
+wx.ID_1 = 1000
+wx.ID_2 = 1001
+wx.ID_3 = 1002
+
 ###########################################################################
 ## Class MainFrame
 ###########################################################################
@@ -31,12 +35,12 @@ class MainFrame ( wx.Frame ):
 		self.m_panel25 = wx.Panel( self.m_panel26, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
 		bSizer36 = wx.BoxSizer( wx.VERTICAL )
 		
-		sbSizer1 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel25, wx.ID_ANY, u"Server" ), wx.HORIZONTAL )
+		sbSizer1 = wx.StaticBoxSizer( wx.StaticBox( self.m_panel25, wx.ID_ANY, u"Status" ), wx.HORIZONTAL )
 		
 		
 		sbSizer1.AddSpacer( ( 10, 0), 1, wx.EXPAND, 5 )
 		
-		self.m_status_server = wx.RadioButton( self.m_panel25, wx.ID_ANY, u"Server", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_status_server = wx.RadioButton( self.m_panel25, wx.ID_1, u"Server", wx.DefaultPosition, wx.DefaultSize, wx.RB_SINGLE )
 		self.m_status_server.Enable( False )
 		
 		sbSizer1.Add( self.m_status_server, 0, wx.BOTTOM, 5 )
@@ -44,7 +48,7 @@ class MainFrame ( wx.Frame ):
 		
 		sbSizer1.AddSpacer( ( 10, 0), 1, wx.EXPAND, 5 )
 		
-		self.m_status_game = wx.RadioButton( self.m_panel25, wx.ID_ANY, u"Game", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_status_game = wx.RadioButton( self.m_panel25, wx.ID_2, u"Game", wx.DefaultPosition, wx.DefaultSize, wx.RB_SINGLE )
 		self.m_status_game.Enable( False )
 		
 		sbSizer1.Add( self.m_status_game, 0, 0, 5 )
@@ -52,7 +56,7 @@ class MainFrame ( wx.Frame ):
 		
 		sbSizer1.AddSpacer( ( 10, 0), 1, wx.EXPAND, 5 )
 		
-		self.m_status_stats = wx.RadioButton( self.m_panel25, wx.ID_ANY, u"Stats", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_status_stats = wx.RadioButton( self.m_panel25, wx.ID_3, u"Stats", wx.DefaultPosition, wx.DefaultSize, wx.RB_SINGLE )
 		self.m_status_stats.Enable( False )
 		
 		sbSizer1.Add( self.m_status_stats, 0, 0, 5 )

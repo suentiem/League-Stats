@@ -29,6 +29,7 @@ def main():
     last_results = None
     kill_spree = (0,0)
     while not kill_event.is_set():
+        sleep(0.1)
         windows = get_windows_bytitle('League of Legends')
 
         # =========================================
@@ -44,7 +45,14 @@ def main():
             #  Screenshot
             # =========================================
 
-            screenshot = Screenshot(screenshot_image(window))
+            try:
+                screenshot = Screenshot(screenshot_image(window))
+            except:
+                #TODO: save screenshot
+                gui.set_status_stats(False)
+                gui.set_status_game(False)
+                gui.set_stats({})
+                continue
 
             # =========================================
             #  Stats
@@ -54,8 +62,13 @@ def main():
                 results = get_stats(screenshot)
             except:
                 #TODO: save screenshot
+                results = None
+                
+            if results is None:
                 gui.set_status_stats(False)
+                gui.set_stats({})
                 continue
+
 
             gui.set_status_stats(True)
             gui.set_stats(results)
@@ -71,8 +84,6 @@ def main():
                 diff_deaths = results['deaths'] - last_results['deaths']
                 diff_team_kills = results['team_kills'] - last_results['team_kills']
                 diff_team_deaths = results['team_deaths'] - last_results['team_deaths']
-
-                gui.set_cs(results['CS'])
 
                 if diff_cs > 0:
                     socket_server.send({ 'event': 'cs', 'amount': diff_cs, 'total': results['CS'] })
@@ -106,9 +117,9 @@ def main():
 
         else:
             gui.set_status_game(False)
+            gui.set_stats({})
 
         gui.set_status_clients(len(socket_server.clients()))
-        sleep(0.1)
 
     socket_server.stop()
 
