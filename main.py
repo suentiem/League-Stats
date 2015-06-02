@@ -26,6 +26,8 @@ def main():
     #  Main Loop
     # =========================================
 
+    game_open = False
+    game_started = False
     last_results = None
     kill_spree = (0,0)
     while not kill_event.is_set():
@@ -37,6 +39,10 @@ def main():
         # =========================================
 
         if windows:
+            if not game_open:
+                game_open = True
+                socket_server.send({ 'event': 'game_loading' })
+
             gui.set_status_game(True)
 
             window = windows[0]
@@ -69,6 +75,13 @@ def main():
                 gui.set_stats({})
                 continue
 
+            # =========================================
+            #  Stats Exist!
+            # =========================================
+
+            if not game_started:
+                game_started = True
+                socket_server.send({ 'event': 'game_started' })
 
             gui.set_status_stats(True)
             gui.set_stats(results)
@@ -116,6 +129,14 @@ def main():
         # =========================================
 
         else:
+            if game_started:
+                game_started = False
+                last_results = None
+                socket_server.send({ 'event': 'game_finished' })
+
+            if game_open:
+                game_open = False
+
             gui.set_status_game(False)
             gui.set_stats({})
 

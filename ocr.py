@@ -12,6 +12,8 @@ PIXEL_COLOR_BORDER = (73, 73, 73), 22, 40
 PIXEL_COLOR_TEXT = (244, 244, 244), 85, 180
 PIXEL_COLOR_TEXT_TEAM_KILLS = (57, 171, 227), 85, 180 # (47,140,181)
 PIXEL_COLOR_TEXT_TEAM_DEATHS = (226, 47, 48), 85, 180
+PIXEL_COLOR_BOX_LEFT_INNER_VALIDATION = (8, 35, 32), 10, 20
+PIXEL_COLOR_BOX_MINION_VALIDATION = (154, 39, 159), 10, 20
 
 STATS_BOX_WIDTH = 423.0
 X_BOUNDS_TEAM_KILLS = (0.0 / STATS_BOX_WIDTH, 40.0 / STATS_BOX_WIDTH)
@@ -110,6 +112,41 @@ def stats_box_trim(screenshot, bounding_box):
     return None
 
 
+# Validates the box is visible and readable
+def stats_box_validate(screenshot, bounding_box):
+    # ratio check
+    RATIO_NEEDED = 33
+    RATIO_MAX_DIFF = 6
+
+    y_min = bounding_box[0]
+    y_max = bounding_box[2]
+    x_min = bounding_box[3]
+    x_max = bounding_box[1]
+    width = x_max+1-x_min
+    height = y_max+1-y_min
+
+    ratio = float(width) / height
+    if abs(ratio-RATIO_NEEDED) > RATIO_MAX_DIFF:
+        return False
+
+    # box left bottom color check
+    # pixel = screenshot.pixel(x_min+4, y_min-1)
+    # matches = pixel_match_fuzzy(PIXEL_COLOR_BOX_LEFT_INNER_VALIDATION, pixel)
+    # if not matches:
+    #     print "f2"
+    #     return False
+
+    # box minion icon check
+
+    pixel_x = x_min+int(round(width*0.6851))
+    pixel_y = y_min+int(round(height*0.45))
+    matches = pixel_match_fuzzy(PIXEL_COLOR_BOX_MINION_VALIDATION, screenshot.pixel(pixel_x,pixel_y)) or \
+                pixel_match_fuzzy(PIXEL_COLOR_BOX_MINION_VALIDATION, screenshot.pixel(pixel_x-1,pixel_y-1)) or \
+                pixel_match_fuzzy(PIXEL_COLOR_BOX_MINION_VALIDATION, screenshot.pixel(pixel_x+1,pixel_y+1))
+    if not matches:
+        return False
+
+    return True
 
 def get_numbers(screenshot, bounding_box, x_bounds, pixel_color):
 
@@ -283,16 +320,14 @@ def get_number_ocr(screenshot, bounding_box, pixel_color):
 
 dump_pics = False
 current_numbers = {}
-def out_debug(screenshot, bounding_box, name='out'):
-    if not dump_pics:
+def out_debug(screenshot, bounding_box, name='out', force=False):
+    if not dump_pics and not force:
         return
     current_number = current_numbers.get(name, 0)
     crop_box = (bounding_box[3], bounding_box[0], bounding_box[1]+1, bounding_box[2]+1)
     screenshot_box = screenshot.image.crop(crop_box)
     screenshot_box.save('{}{}.bmp'.format(name, current_number))
     current_numbers[name] = current_number+1
-
-
 
 def get_stats(screenshot):
     bounding_box = stats_box_find(screenshot)
@@ -303,7 +338,11 @@ def get_stats(screenshot):
     if not bounding_box:
         return None
 
-    return {
+    validated = stats_box_validate(screenshot, bounding_box)
+    if not validated:
+        return None
+
+    results = {
         'team_kills': get_numbers(screenshot, bounding_box, X_BOUNDS_TEAM_KILLS, PIXEL_COLOR_TEXT_TEAM_KILLS),
         'team_deaths': get_numbers(screenshot, bounding_box, X_BOUNDS_TEAM_DEATHS, PIXEL_COLOR_TEXT_TEAM_DEATHS),
         'kills': get_numbers(screenshot, bounding_box, X_BOUNDS_KILLS, PIXEL_COLOR_TEXT),
@@ -311,3 +350,5 @@ def get_stats(screenshot):
         'assists': get_numbers(screenshot, bounding_box, X_BOUNDS_ASSISTS, PIXEL_COLOR_TEXT),
         'CS': get_numbers(screenshot, bounding_box, X_BOUNDS_CS, PIXEL_COLOR_TEXT),
     }
+
+    return results

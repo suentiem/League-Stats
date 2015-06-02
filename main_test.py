@@ -6,26 +6,48 @@ import mp3play
 from time import sleep, time
 
 from PIL import Image
-from capture import screenshot_image, get_windows_bytitle, Screenshot
-from ocr import *
+from capture import Screenshot
+from ocr import get_stats
 
 
 def main_test():
 
     # Testing
-    answers = [0,20,28,35,38,47,68,86,96,102,123,20,14,5,23,12,32,44,78,100,200,202,65,52,52,22]
+    answers = [
+        [30,38,18,9,5,223],
+        None,
+        [28, 33, 16, 8, 5, 219],
+        None,
+        [0,1,0,1,0,4],
+        [1,7,1,3,0,34],
+        [6,13,5,5,0,76],
+        [11,17,9,6,0,102],
+        [22,27,14,7,3,194],
+        None,
+        [0,0,0,0,0,0],
+        None,
+        None,
+        None,
+        None,
+        None,
+        [20,6,16,2,1,154],
+        None,
+        [9,2,6,1,0,94],
+        [16,2,13,1,0,120],
+        [16,2,13,1,0,120],
+    ]
     for index, answer in enumerate(answers):
-        screenshot = Screenshot(Image.open('tests/screenshot{}.bmp'.format(index+1)))
+        screenshot = Screenshot(Image.open('tests/screenshot_{}.bmp'.format(index+1)))
+        results = get_stats(screenshot)
+        if results:
+            results = [results['team_kills'], results['team_deaths'], results['kills'], results['deaths'], results['assists'], results['CS']]
 
-        bounding_box = stats_box_find(screenshot)
-        bounding_box = stats_box_trim(screenshot, bounding_box)
+        correct = results is None and answer is None or results and answer and not [i for i in range(5) if not answer[i] == results[i]]
 
-        result = get_numbers(screenshot, bounding_box, X_BOUNDS_CS, PIXEL_COLOR_TEXT)
-
-        if not result == answer:
-            print " -- WRONG {} ({} instead of {})".format(index+1, result, answer)
+        if not correct:
+            print " -- WRONG {} ({} instead of {})".format(index+1, results, answer)
         else:
-            print "{} OK ({})".format(index+1, result)
+            print "{} OK ({})".format(index+1, results)
 
     # X_BOUNDS_TEAM_KILLS = (0.0 / STATS_BOX_WIDTH, 42.0 / STATS_BOX_WIDTH)
     # X_BOUNDS_TEAM_DEATHS = (59.0 / STATS_BOX_WIDTH, 101.0 / STATS_BOX_WIDTH)
