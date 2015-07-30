@@ -8,14 +8,14 @@ import win32con
 from PIL import Image
 
 PIXEL_COLOR_BACKGROUND = (16, 28, 24), 14, 14
-PIXEL_COLOR_BORDER = (23, 54, 54), 10, 40
-PIXEL_COLOR_BORDER_EDGE = (16, 27, 27), 1, 20
-PIXEL_COLOR_TEXT = (171, 171, 144), 85, 85
+PIXEL_COLOR_BORDER = (23, 54, 54), 8, 40
+PIXEL_COLOR_BORDER_EDGE = (16, 27, 27), 1, 40
+PIXEL_COLOR_TEXT = (171, 171, 144), 85, 115
 PIXEL_COLOR_TEXT_SPLITTER = (137, 142, 121), 35, 35
 PIXEL_COLOR_ICON = (171, 171, 144), 45, 50
-PIXEL_COLOR_BAR = (171, 171, 144), 45, 50
-PIXEL_COLOR_TEXT_TEAM_KILLS = (1, 150, 220), 45, 45 # (47,140,181)
-PIXEL_COLOR_TEXT_TEAM_DEATHS = (232, 6, 6), 45, 45
+PIXEL_COLOR_BAR = (171, 171, 144), 45, 80
+PIXEL_COLOR_TEXT_TEAM_BLUE = (1, 150, 220), 45, 65 # (47,140,181)
+PIXEL_COLOR_TEXT_TEAM_RED = (232, 6, 6), 45, 65
 
 STATS_BOX_WIDTH = 423.0
 X_BOUNDS_TEAM_KILLS = (0.0 / STATS_BOX_WIDTH, 40.0 / STATS_BOX_WIDTH)
@@ -86,6 +86,10 @@ def stats_box_find(screenshot):
     while y < screenshot.height:
         pixel = screenshot.pixel(x, y)
         match = pixel_match_fuzzy(PIXEL_COLOR_BORDER_EDGE, pixel)
+        check = pixel_match_fuzzy(PIXEL_COLOR_BORDER, pixel, forgiving=True)
+
+        if not check:
+            return None
 
         if match:
             maxY = y
@@ -112,7 +116,7 @@ def stats_box_trim(screenshot, bounding_box):
 
         y = min_y
         while y <= max_y:
-            matched = pixel_match_fuzzy(PIXEL_COLOR_TEXT_TEAM_DEATHS, screenshot.pixel(x,y))
+            matched = pixel_match_fuzzy(PIXEL_COLOR_TEXT_TEAM_RED, screenshot.pixel(x,y))
             if matched:
                 if new_min_y is None or y < new_min_y:
                     new_min_y = y
@@ -265,7 +269,10 @@ def get_number_ocr(screenshot, bounding_box, pixel_color):
 
     mid_center_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.5)), forgiving=True) or \
                         pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.6)), forgiving=True) or \
-                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.45)), forgiving=True) 
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.45)), forgiving=True) or \
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.38)), forgiving=True) or \
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.6), y_min+int(height*0.6)), forgiving=True) or \
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.62)), forgiving=True) 
  
     # =====> 0 <=====
     if not mid_center_match:
@@ -273,7 +280,8 @@ def get_number_ocr(screenshot, bounding_box, pixel_color):
 
     bottom_left_match_strict = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_max))
     bottom_right_match_strict = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max, y_max))
-    bottom_left_match = bottom_left_match_strict or pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_max), forgiving=True)
+    bottom_left_match = bottom_left_match_strict or pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_max), forgiving=True) \
+                                                 or pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_max-int(height*0.1)), forgiving=True)
     bottom_right_match = bottom_right_match_strict or pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max-1, y_max), forgiving=True)
 
     bottom_mid_center_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.7)))
@@ -319,7 +327,7 @@ def get_number_ocr(screenshot, bounding_box, pixel_color):
     if not top_mid_left_match and not top_mid_left_center_match and top_mid_right_match:
         return [3]
 
-    bottom_mid_left_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min+int(height*0.75)-1), forgiving=True)
+    bottom_mid_left_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min+int(height*0.8)-1), forgiving=True)
 
     #print " stat3 {} {} {} {}".format(mid_center_match, top_mid_left_match, bottom_mid_left_match, top_mid_left_center_match)
 
@@ -456,40 +464,21 @@ def out_debug(screenshot, bounding_box, name='out', force=False):
     screenshot_box.save('output/{}{}.bmp'.format(name, current_number))
     current_numbers[name] = current_number+1
 
-def get_stats_old(screenshot):
-    bounding_box = stats_box_find(screenshot)
-    if not bounding_box:
-        return None
-
-    bounding_box = stats_box_trim(screenshot, bounding_box)
-    if not bounding_box:
-        return None
-
-    validated = stats_box_validate(screenshot, bounding_box)
-    if not validated:
-        return None
-
-    results = {
-        'team_kills': get_numbers(screenshot, bounding_box, X_BOUNDS_TEAM_KILLS, PIXEL_COLOR_TEXT_TEAM_KILLS),
-        'team_deaths': get_numbers(screenshot, bounding_box, X_BOUNDS_TEAM_DEATHS, PIXEL_COLOR_TEXT_TEAM_DEATHS),
-        'kills': get_numbers(screenshot, bounding_box, X_BOUNDS_KILLS, PIXEL_COLOR_TEXT),
-        'deaths': get_numbers(screenshot, bounding_box, X_BOUNDS_DEATHS, PIXEL_COLOR_TEXT),
-        'assists': get_numbers(screenshot, bounding_box, X_BOUNDS_ASSISTS, PIXEL_COLOR_TEXT),
-        'CS': get_numbers(screenshot, bounding_box, X_BOUNDS_CS, PIXEL_COLOR_TEXT),
-    }
-
-    return results
-
-
-def get_stats(screenshot):
+def get_stats(screenshot, debug=False):
 
     bounding_box = stats_box_find(screenshot)
     if not bounding_box:
         return None
+    if debug:
+        print ("Found Box: {}".format(bounding_box))
+        out_debug(screenshot, bounding_box, force=True)
 
     bounding_box = stats_box_trim(screenshot, bounding_box)
     if not bounding_box:
         return None
+    if debug:
+        print ("Trim Box: {}".format(bounding_box))
+        out_debug(screenshot, bounding_box, force=True)
 
     # Find minion kills
     minY, maxX, maxY, minX = bounding_box
@@ -498,19 +487,35 @@ def get_stats(screenshot):
     minion_kills_bounds_x = find_block_x(screenshot, bounding_box, minion_icon_bounds[1]+1, fails_possible=10)
     kda_icon_bounds = find_block_x(screenshot, bounding_box, minion_kills_bounds_x[1]+1, color=PIXEL_COLOR_ICON)
     kda_bounds_x = find_block_x(screenshot, bounding_box, kda_icon_bounds[1]+1, fails_possible=10)
-    team_kills_x = find_block_x(screenshot, bounding_box, kda_bounds_x[1]+1, color=PIXEL_COLOR_TEXT_TEAM_KILLS, fails_possible=10)
-    team_deaths_x = find_block_x(screenshot, bounding_box, team_kills_x[1]+1, color=PIXEL_COLOR_TEXT_TEAM_DEATHS, fails_possible=10)
+    team_red_kills_x = find_block_x(screenshot, bounding_box, kda_bounds_x[1]+1, color=PIXEL_COLOR_TEXT_TEAM_RED, fails_possible=10)
+    team_blue_kills_x = find_block_x(screenshot, bounding_box, kda_bounds_x[1]+1, color=PIXEL_COLOR_TEXT_TEAM_BLUE, fails_possible=10)
+
+    is_player_red = True if team_red_kills_x[0] < team_blue_kills_x[0] else False
+    team_kills_x = team_red_kills_x if is_player_red else team_blue_kills_x
+    team_deaths_x = team_red_kills_x if not is_player_red else team_blue_kills_x
 
     kills_deaths_splitter_bounds_x = find_splitter_x(screenshot, bounding_box, kda_bounds_x[0])
     deaths_assists_splitter_bounds_x = find_splitter_x(screenshot, bounding_box, kills_deaths_splitter_bounds_x[1]+1)
 
-    kills_bounds_x = [kda_bounds_x[0], kills_deaths_splitter_bounds_x[0]-1]
-    deaths_bounds_x = [kills_deaths_splitter_bounds_x[1]+1, deaths_assists_splitter_bounds_x[0]-1]
-    assists_bounds_x = [deaths_assists_splitter_bounds_x[1]+1, kda_bounds_x[1]]
+    kills_bounds_x = [kda_bounds_x[0], kills_deaths_splitter_bounds_x[0]-2]
+    deaths_bounds_x = [kills_deaths_splitter_bounds_x[1]+2, deaths_assists_splitter_bounds_x[0]-2]
+    assists_bounds_x = [deaths_assists_splitter_bounds_x[1]+2, kda_bounds_x[1]]
+
+    if debug:
+        out_debug(screenshot, [minY, minion_kills_bounds_x[1], maxY, minion_kills_bounds_x[0]], force=True)
+        out_debug(screenshot, [minY, kda_bounds_x[1], maxY, kda_bounds_x[0]], force=True)
+        out_debug(screenshot, [minY, team_kills_x[1], maxY, team_kills_x[0]], force=True)
+        out_debug(screenshot, [minY, team_deaths_x[1], maxY, team_deaths_x[0]], force=True)
+        out_debug(screenshot, [minY, kills_bounds_x[1], maxY, kills_bounds_x[0]], force=True)
+        out_debug(screenshot, [minY, deaths_bounds_x[1], maxY, deaths_bounds_x[0]], force=True)
+        out_debug(screenshot, [minY, assists_bounds_x[1], maxY, assists_bounds_x[0]], force=True)
+        out_debug(screenshot, [minY, kills_deaths_splitter_bounds_x[1], maxY, kills_deaths_splitter_bounds_x[0]], force=True)
+        out_debug(screenshot, [minY, deaths_assists_splitter_bounds_x[1], maxY, deaths_assists_splitter_bounds_x[0]], force=True)
+
 
     return {
-        'team_kills': get_numbers(screenshot, bounding_box, team_kills_x, PIXEL_COLOR_TEXT_TEAM_KILLS),
-        'team_deaths': get_numbers(screenshot, bounding_box, team_deaths_x, PIXEL_COLOR_TEXT_TEAM_DEATHS),
+        'team_kills': get_numbers(screenshot, bounding_box, team_kills_x, PIXEL_COLOR_TEXT_TEAM_RED if is_player_red else PIXEL_COLOR_TEXT_TEAM_BLUE),
+        'team_deaths': get_numbers(screenshot, bounding_box, team_deaths_x, PIXEL_COLOR_TEXT_TEAM_RED if not is_player_red else PIXEL_COLOR_TEXT_TEAM_BLUE),
         'kills': get_numbers(screenshot, bounding_box, kills_bounds_x, PIXEL_COLOR_TEXT),
         'deaths': get_numbers(screenshot, bounding_box, deaths_bounds_x, PIXEL_COLOR_TEXT),
         'assists': get_numbers(screenshot, bounding_box, assists_bounds_x, PIXEL_COLOR_TEXT),
