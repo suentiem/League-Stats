@@ -60,4 +60,6 @@ target/
 # Project
 build/
 tests/
+test-newui/
+output/
 *.spec

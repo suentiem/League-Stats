@@ -59,6 +59,8 @@ def main_test():
         None,
         [4,0,0,0,0,0],
         [262,20,1,0,27,18],
+        None,
+        None,
     ]
     for index, answer in enumerate(answers):
         screenshot = Screenshot(Image.open('test-newui\\screenshot-{}.bmp'.format(index)))

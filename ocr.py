@@ -99,6 +99,18 @@ def stats_box_find(screenshot):
         if not y < screenshot.height:
             return None
 
+    # Ride the border to the left until the edge
+    x = minX
+    y = maxY - 1
+    while x < maxX:
+        pixel = screenshot.pixel(x, y)
+        match = pixel_match_fuzzy(PIXEL_COLOR_BORDER, pixel, forgiving=True)
+
+        if not match:
+            return None
+
+        x += 1
+
     return minY, maxX, maxY, minX
 
 # trims a stats box by looking for kills and using that as the bounding height
@@ -137,43 +149,6 @@ def stats_box_trim(screenshot, bounding_box):
         x -= 1
 
     return None
-
-
-# Validates the box is visible and readable
-def stats_box_validate(screenshot, bounding_box):
-    # ratio check
-    RATIO_NEEDED = 33
-    RATIO_MAX_DIFF = 6
-
-    y_min = bounding_box[0]
-    y_max = bounding_box[2]
-    x_min = bounding_box[3]
-    x_max = bounding_box[1]
-    width = x_max+1-x_min
-    height = y_max+1-y_min
-
-    ratio = float(width) / height
-    if abs(ratio-RATIO_NEEDED) > RATIO_MAX_DIFF:
-        return False
-
-    # box left bottom color check
-    # pixel = screenshot.pixel(x_min+4, y_min-1)
-    # matches = pixel_match_fuzzy(PIXEL_COLOR_BOX_LEFT_INNER_VALIDATION, pixel)
-    # if not matches:
-    #     print "f2"
-    #     return False
-
-    # box minion icon check
-
-    pixel_x = x_min+int(round(width*0.6851))
-    pixel_y = y_min+int(round(height*0.45))
-    matches = pixel_match_fuzzy(PIXEL_COLOR_BOX_MINION_VALIDATION, screenshot.pixel(pixel_x,pixel_y)) or \
-                pixel_match_fuzzy(PIXEL_COLOR_BOX_MINION_VALIDATION, screenshot.pixel(pixel_x-1,pixel_y-1)) or \
-                pixel_match_fuzzy(PIXEL_COLOR_BOX_MINION_VALIDATION, screenshot.pixel(pixel_x+1,pixel_y+1))
-    if not matches:
-        return False
-
-    return True
 
 def get_numbers(screenshot, bounding_box, x_bounds, pixel_color):
 
