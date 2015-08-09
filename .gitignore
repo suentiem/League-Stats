@@ -61,5 +61,6 @@ target/
 build/
 tests/
 test-newui/
+test-newerui/
 output/
 *.spec
