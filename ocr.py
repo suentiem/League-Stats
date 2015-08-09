@@ -10,15 +10,22 @@ from PIL import Image
 
 
 
-PIXEL_COLOR_BACKGROUND = (8,8,31), 80, 150
+PIXEL_COLOR_BACKGROUND = (8,8,31), 80, 160
 PIXEL_COLOR_BORDER_BACKGROUND = (9,33,34), 14, 14
 PIXEL_COLOR_TEXT_CS = (255,248,140), 55, 65
-PIXEL_COLOR_TEXT_KDA = (204,204,204), 45, 65
+PIXEL_COLOR_TEXT_KDA = (204,204,204), 50, 70
 PIXEL_COLOR_TEXT_TEAM_KILLS = (1, 150, 220), 28, 45
-PIXEL_COLOR_TEXT_TEAM_DEATHS = (232, 6, 6), 35, 65
+PIXEL_COLOR_TEXT_TEAM_DEATHS = (232, 6, 6), 25, 55
 PIXEL_COLOR_ICON = (171, 171, 144), 45, 50
+PIXEL_COLOR_SHOP_BORDER = (111,92,45), 9, 25
+PIXEL_COLOR_SHOP_BORDER_2 = (96,89,60), 5, 25
+PIXEL_COLOR_SHOP_BORDER_3 = (152,152,152), 5, 25
 
-PIXEL_COLOR_TEXT_TEAM_KILLS_BOUNDS = PIXEL_COLOR_TEXT_TEAM_KILLS[0], 10, 10
+PIXEL_COLOR_SHOP_2BORDER_1 = (34,57,64), 6, 15
+PIXEL_COLOR_SHOP_2BORDER_2 = (27,58,75), 6, 15
+
+PIXEL_COLOR_TEXT_TEAM_KILLS_BOUNDS = PIXEL_COLOR_TEXT_TEAM_KILLS[0], 5, 5
+PIXEL_COLOR_TEXT_TEAM_KILLS_NEARBY = (1, 150, 220), 80, 120
 
 def pixel_match_fuzzy(template, input, forgiving=False):
     values = template[0]
@@ -30,6 +37,24 @@ def pixel_match_fuzzy(template, input, forgiving=False):
 
 def pixel_diff(a, b):
     return sum([ b[i]-a[i] for i in range(3) ])
+
+def validate_pixels_y(screenshot, bounding_box, color, min_fill=0.82):
+    min_y, max_x, max_y, min_x = bounding_box
+    height = max_y - min_y
+
+    y = min_y
+    matches = 0
+    while y <= max_y:
+        x = min_x
+        matched = False
+        while x <= max_x:
+            if pixel_match_fuzzy(color, screenshot.pixel(x,y)):
+                matches += 1
+                break
+            x += 1
+        y += 1
+
+    return matches >= int(min_fill*height)
 
 # Returns top, right, bottom, left - or None
 def stats_box_find(screenshot):
@@ -87,7 +112,7 @@ def stats_box_find(screenshot):
         y = minY
         matched = False
         while y < maxY:
-            matched = pixel_match_fuzzy(match_color, screenshot.pixel(x,y))
+            matched = pixel_match_fuzzy(match_color, screenshot.pixel(x,y), forgiving=True)
             if matched:
                 misses = 0
                 break
@@ -95,7 +120,7 @@ def stats_box_find(screenshot):
 
         if not matched:
             misses += 1
-            if misses > 7:
+            if misses > 9:
                 minX = x + misses
                 break
 
@@ -103,13 +128,27 @@ def stats_box_find(screenshot):
         if not x > half_width:
             return None
 
+    # If the team kills is fuzzy, bail out
+    if match_color == PIXEL_COLOR_TEXT_TEAM_KILLS_BOUNDS:
+        height = maxY-minY
+        half_y = int(minY+height/2)
+        third_y = int(minY+height/3)
+        if pixel_match_fuzzy(PIXEL_COLOR_TEXT_TEAM_KILLS_NEARBY, screenshot.pixel(minX-2, half_y)) or \
+            pixel_match_fuzzy(PIXEL_COLOR_TEXT_TEAM_KILLS_NEARBY, screenshot.pixel(minX-2, third_y)) or \
+            pixel_match_fuzzy(PIXEL_COLOR_TEXT_TEAM_KILLS_NEARBY, screenshot.pixel(minX-2, third_y*2)) or \
+            pixel_match_fuzzy(PIXEL_COLOR_TEXT_TEAM_KILLS_NEARBY, screenshot.pixel(minX+5, maxY+1)):
+            return None
+
     # Now scan the bottom
-    x = minX
-    y = maxY-2
+    x = minX-4
+    y = maxY-4
     xMidLeft = int(minX + (maxX-minX) * 0.3)
     while x < xMidLeft:
-        matched = pixel_match_fuzzy(PIXEL_COLOR_BACKGROUND, screenshot.pixel(x,y), forgiving=True)
-        if not matched:
+        pixel = screenshot.pixel(x,y)
+        borked = pixel_match_fuzzy(PIXEL_COLOR_SHOP_BORDER, pixel) or \
+                pixel_match_fuzzy(PIXEL_COLOR_SHOP_BORDER_2, pixel) or \
+                pixel_match_fuzzy(PIXEL_COLOR_SHOP_BORDER_3, pixel)
+        if borked:
             return None
         x += 1
 
@@ -255,7 +294,9 @@ def get_number_ocr(screenshot, bounding_box, pixel_color):
                         pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.45)), forgiving=True) or \
                         pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.38)), forgiving=True) or \
                         pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.6), y_min+int(height*0.6)), forgiving=True) or \
-                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.62)), forgiving=True) 
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.62)), forgiving=True) or \
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.5), y_min+int(height*0.7)), forgiving=True) or \
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.30), y_min+int(height*0.5)), forgiving=True)
  
     # =====> 0 <=====
     if not mid_center_match:
@@ -273,13 +314,17 @@ def get_number_ocr(screenshot, bounding_box, pixel_color):
     #print " stat {}-{} {}-{} {}".format(bottom_left_match_strict, bottom_left_match, bottom_right_match_strict, bottom_right_match, bottom_mid_center_match)
 
 
-    top_left_match_strict = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min))
+    top_left_match_strict = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min)) or \
+                            pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.1), y_min+int(height*0.1)))
     top_right_match_strict = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max, y_min))
     top_left_match = top_left_match_strict or \
-                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min), forgiving=True)
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min), forgiving=True) or \
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.05), y_min+int(height*0.05)), forgiving=True) or \
+                        pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.15), y_min), forgiving=True)
     top_right_match = top_right_match_strict or \
                         pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max, y_min), forgiving=True)
-    top_mid_left_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min+int(height*0.25)), forgiving=True)
+    top_mid_left_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min+int(height*0.25)), forgiving=True)  or \
+                            pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.2), y_min+int(height*0.25)), forgiving=True)
     #print " stat2 {} {}".format(top_left_match, top_right_match)
 
     top_mid_center_right_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+int(width*0.75), y_min+int(height*0.25)), forgiving=True)
@@ -289,7 +334,9 @@ def get_number_ocr(screenshot, bounding_box, pixel_color):
         return [4]
 
     #print " stat4 {} {} {} {}".format(bottom_left_match, top_left_match, bottom_right_match, top_right_match)
-    bottom_mid_right_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max, y_min+int(height*0.75)), forgiving=True)
+    bottom_mid_right_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max, y_min+int(height*0.75))) or \
+                             pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max-int(width*0.2), y_min+int(height*0.75))) or \
+                             pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max-int(width*0.1), y_min+int(height*0.8)))
 
     # =====> 2 <=====
     if not bottom_mid_right_match and bottom_right_match:
@@ -310,7 +357,7 @@ def get_number_ocr(screenshot, bounding_box, pixel_color):
 
     top_mid_right_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_max, y_min+int(height*0.25)), forgiving=True)
 
-    bottom_mid_left_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min+int(height*0.75)-1)) or \
+    bottom_mid_left_match = pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min+1, y_min+int(height*0.75)-1)) or \
                             pixel_match_fuzzy(pixel_color, screenshot.pixel(x_min, y_min+int(height*0.8)-1))
 
     #print " stat3 {} {} {} {}".format(mid_center_match, top_mid_left_match, bottom_mid_left_match, top_mid_left_center_match)
@@ -524,6 +571,9 @@ def get_stats(screenshot, debug=False):
     kills_bounds_x = [kda_bounds_x[0], kills_deaths_splitter_bounds_x[0]-2]
     deaths_bounds_x = [kills_deaths_splitter_bounds_x[1]+2, deaths_assists_splitter_bounds_x[0]-2]
     assists_bounds_x = [deaths_assists_splitter_bounds_x[1]+2, kda_bounds_x[1]]
+
+    if not validate_pixels_y(screenshot, [minY, team_kills_x[1], maxY, team_kills_x[0]], color=PIXEL_COLOR_TEXT_TEAM_KILLS):
+        return None
 
     if debug:
         print "kda {}-{}".format(*kda_bounds_x)

@@ -13,6 +13,7 @@ from threading import Thread, Event
 
 
 def main():
+    broken = 0
     kill_event = Event()
 
     socket_server = Server()
@@ -86,6 +87,10 @@ def main():
             gui.set_status_stats(True)
             gui.set_stats(results)
 
+            if results['team_kills'] > 200 or results['team_deaths'] > 200 or results['kills'] > 200:
+                broken += 1
+                screenshot.image.save('broken{}.bmp'.format(broken))
+
             # =========================================
             #  Events
             # =========================================
@@ -97,6 +102,12 @@ def main():
                 diff_deaths = results['deaths'] - last_results['deaths']
                 diff_team_kills = results['team_kills'] - last_results['team_kills']
                 diff_team_deaths = results['team_deaths'] - last_results['team_deaths']
+
+                if diff_team_kills < 0 or diff_team_deaths < 0 or diff_kills < 0:
+                    broken += 1
+                    screenshot.image.save('broken_before_{}.bmp'.format(broken))
+                    last_screenshot.image.save('broken_after_{}.bmp'.format(broken))
+
 
                 if diff_cs > 0:
                     socket_server.send({ 'event': 'cs', 'amount': diff_cs, 'total': results['CS'] })
@@ -123,6 +134,7 @@ def main():
                     socket_server.send({ 'event': 'team_death', 'amount': diff_team_deaths, 'total': results['team_deaths'] })
 
             last_results = results
+            last_screenshot = screenshot
 
         # =========================================
         #  Missing Window

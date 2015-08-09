@@ -20,23 +20,23 @@ def main_test():
 
         [0,0,0,0,0,0],
         [0,0,0,0,0,0],
+        None, #[0,0,0,0,0,0],
         [0,0,0,0,0,0],
-        [0,0,0,0,0,0],
-        [0,0,0,0,0,0],
-        [0,0,0,0,0,0],
+        None, #[0,0,0,0,0,0],
+        None, #[0,0,0,0,0,0],
         [0,0,0,0,0,6],
         [0,0,0,0,0,25],
-        [0,0,0,0,0,29],
+        None, #[0,0,0,0,0,29],
         [1,0,1,0,0,38],
         [3,0,2,0,0,43],
         [3,1,2,0,0,73],
         None,
         [5,3,4,1,0,95],
-        [5,3,4,1,0,95],
-        [5,3,4,1,0,95],
-        [5,3,4,1,0,95],
-        [5,3,4,1,0,95],
-        [5,3,4,1,0,95],
+        None, #[5,3,4,1,0,95],
+        None, #[5,3,4,1,0,95],
+        None, #[5,3,4,1,0,95],
+        None, #[5,3,4,1,0,95],
+        None, #[5,3,4,1,0,95],
         [8,3,5,1,2,97],
         [13,5,10,1,2,106],
         [14,6,11,1,2,112],
@@ -87,9 +87,59 @@ def main_test():
         None,
         None,
         None,
+        None,
+        None,
+        None,
+        None,
+        [10,4,7,0,0,133],
+        None, #[11,5,8,0,0,170],
+        [15,7,12,0,0,224],
+        [15,7,12,0,0,224],
+        None, #[16,8,13,0,0,228],
+        None, #[15,10,12,2,0,93],
+        None, #[15,10,12,2,0,93],
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None, #[7,5,6,1,0,62],
+        None,
+        None,
+        None, #[7,5,6,1,0,62],
+        [15,11,12,2,2,137],
+        [35,17,24,2,3,280],
+        None,
+        None,
+        [25,24,4,7,16,43],
+        [35,26,5,7,23,48],
+        None, #[25,24,4,7,16,43],
+        [35,26,5,7,23,48],
+        None, #[13,4,5,2,1,173],
+        [16,4,7,2,1,186],
+        [17,4,8,2,1,202],
+        None, #[13,4,5,2,1,173],
+        [17,4,8,2,1,202],
+        [16,4,7,2,1,186],
+        [30,17,17,2,1,174],
+        None, #[5,0,3,0,0,32],
+        None, #[5,0,3,0,0,32],
+        [27,13,16,1,1,167],
+        [29,17,17,2,1,174],
+        [30,17,17,2,1,174],
+        None,
+        None,
+        [27,13,16,1,1,167],
+        [29,17,17,2,1,174],
+        None,
+        [8,14,7,1,0,190],
+        None,
+        None,
     ]
     for index, answer in list(enumerate(answers))[:]:
-        screenshot = Screenshot(Image.open('test-newerui\\Screen{0:02}.png'.format(index+1)))
+        screenshot = Screenshot(Image.open('test-newerui\\Screen{0:02}.bmp'.format(index+1)))
         results = get_stats(screenshot)
         if results:
             results = [results['team_kills'], results['team_deaths'], results['kills'], results['deaths'], results['assists'], results['CS'], ]
@@ -119,8 +169,8 @@ def main_screenshot():
 
 def main_test_1(number):
     ocr.dump_pics = True
-    screenshot = Screenshot(Image.open('test-newerui\\Screen{0:02}.png'.format(number)))
+    screenshot = Screenshot(Image.open('test-newerui\\Screen{0:02}.bmp'.format(number)))
     print get_stats(screenshot, debug=True)
 
 main_test()
-#main_test_1(65)
+#main_test_1(116)
